@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COS图片管理</title>
+    <link rel="stylesheet" href="/style.css" />
+
+</head>
+<body style="background:#ecf3fe;">
+
+    <!-- 登录表单 -->
+    <div id="loginContainer" class="login-container">
+        <div style="font-size: 20px;font-weight: bold;padding-left: 10px;text-align: right;">腾讯云COS<span style="color: red;">图片</span>管理</div>
+        <form class="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>密钥ID (SecretId):</label>
+                <input type="text" id="secretId" placeholder="例如：AKID1234567890" required>
+            </div>
+            <div class="form-group">
+                <label>密钥Key (SecretKey):</label>
+                <input type="text" id="secretKey" placeholder="例如：1234567890" required>
+            </div>
+            <div class="form-group">
+                <label>存储桶名称 (Bucket):</label>
+                <input type="text" id="bucket" placeholder="例如：abcdefgh-12456789" required>
+            </div>
+            <div class="form-group">
+                <label>地域代码 (Region):</label>
+                <input type="text" id="region" placeholder="例如：ap-guangzhou" required>
+            </div>
+            <div class="form-group">
+                <label>文件夹路径 (以/结尾):</label>
+                <input type="text" id="folder"  placeholder="例如：images/" required>
+            </div>
+            <button type="submit" class="box-btn" style="padding: 10px 20px;">登录</button>
+        </form>
+        <div class="footer-box" style=" padding: 10px; border-top: 1px solid #e0e0e0; text-align: right;color: #ccc;margin-top: 20px;">
+            <span class="box-link" onclick="showVersionIntroduction()">版本介绍</span> /
+            <span class="box-link" onclick="showUsageInstructions()">使用说明</span>
+        </div>
+    </div>
+
+    <div id="mainContainer" style="max-width: 1440px; width: 100vw; height: 100vh; display: flex; flex-direction: column; margin: 0 auto;" class="hidden">
+        <div id="cos-header" style="background: linear-gradient(135deg, #ffffff, #f8f9fa);box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);border-bottom: 1px solid #e0e0e0;height: 60px;display: none;align-items: center;justify-content: space-between;">
+            <div style="font-size: 20px;font-weight: bold;padding-left: 10px;">COS图片管理</div>
+            <div style="padding-right: 10px; position: relative;"></div>
+        </div>
+        <div id="cos-content" style="flex-grow: 1; display: flex;">
+            <div id="cos-left" style="flex-grow: 1; background:white;">
+                <!-- 上传区域 -->
+                <div class="upload-container">
+                    <input type="file" id="fileInput" style="display: none;" multiple accept="image/*" onchange="handleFileSelect()">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        选择文件上传
+                    </button>
+                    <p style="text-align: center;color: #ccc;">可拖拽上传</p>
+                    <div id="uploadProgress" class="progress-bar hidden">
+                        <div class="progress"></div>
+                    </div>
+                    <div id="uploadStatus" class="upload-status"></div>
+                </div>
+                <!-- 分页控件 -->
+                <div id="pagination" style="text-align: center; margin: 20px;"></div>
+                <!-- tag控件 -->
+                <div id="tag-container"></div>
+                <!-- 图片列表容器 -->
+                <div id="imageContainer" class="main-content"></div>
+            </div>
+            <div id="cos-right" style="width: 280px; background:white;border-left: 1px solid #e0e0e0; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; height: 60px;border-bottom: 1px solid #e0e0e0;">
+                        <div style="margin-left: 10px; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center;">标签列表</div>
+                        <button class="box-btn" style="margin-right: 10px;" onclick="showTagForm()">+添加标签</button>
+                    </div>
+                    <div id="tag-form" class="form-group" style="display: none; padding: 10px;box-sizing: border-box;position: relative;background: #f0f0f0;">
+                        <input type="text" id="newTagName" placeholder="输入标签名称" style="width: 100%; padding: 5px; margin-bottom: 10px;box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <button class="box-btn" onclick="addTag()">提交</button>
+                            <button class="box-btn" onclick="closeTagForm()">取消</button>
+                        </div>
+                    </div>
+                    <div id="tag-list" class="tag-list">
+                        <!-- 标签列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="footer-box" style=" padding: 10px; border-top: 1px solid #e0e0e0; text-align: right;color: #ccc;">
+                    <span class="box-link" onclick="showVersionIntroduction()">版本介绍</span> / 
+                    <span class="box-link" onclick="showUsageInstructions()">使用说明</span> /
+                    <span class="box-link"  onclick="showModal('退出系统', '确定退出吗？', () => handleLogout())" >退出系统</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览抽屉 -->
+    <div id="previewOffcanvas" class="offcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">图片详情</h5>
+            <button type="button" class="btn-close" onclick="closePreview()"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="image-preview-container">
+                <img id="previewImage" class="img-fluid" style="width: 100%; height: auto;">
+            </div>
+            <div class="image-meta mt-3">
+                <p><strong>文件名：</strong><span id="meta-filename">-</span></p>
+                <p><strong>尺寸：</strong><span id="meta-dimension">-</span></p>
+                <p><strong>文件类型：</strong><span id="meta-type">-</span></p>
+                <p><strong>上传时间：</strong><span id="meta-uploadtime">-</span></p>
+                <div class="form-group">
+                    <label for="meta-downloadurl"><strong>下载地址：</strong></label>
+                    <div class="url-copy-group">
+                        <input type="text" id="meta-downloadurl" class="form-control" value="-" readonly>
+                        <button class="box-btn" onclick="copyDownloadUrl()">
+                            <i class="fas fa-copy"></i>
+                            复制
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group"  style="display: none;">
+                    <label for="meta-serverurl"><strong>服务器图片缓存地址：</strong></label>
+                    <div class="url-copy-group">
+                        <input type="text" id="meta-serverurl" class="form-control" value="-" readonly>
+                        <button class="copy-btn" onclick="copyServerUrl()">
+                            <i class="fas fa-copy"></i>
+                            复制
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label for="meta-tags"><strong>标签：</strong></label>
+                    <div class="url-copy-group">
+                        <input type="text" id="meta-tags" class="form-control" placeholder="输入标签,用逗号分隔">
+                        <button class="copy-btn" onclick="updateTags()">
+                            <i class="fas fa-save"></i>
+                            保存
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" style="border: 1px solid #e0e0e0;padding: 10px;">
+                    <label for="all-tags"><strong>所有标签：</strong></label>
+                    <div id="all-tags" class="tag-list">
+                        <!-- 所有标签将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                <div class="form-group" style="border: 1px solid #e0e0e0;padding: 10px;">
+                    <label for="image-tags"><strong>图片所属标签：</strong></label>
+                    <div id="image-tags" class="tag-list">
+                        <!-- 图片所属标签将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas-backdrop" onclick="closePreview()"></div>
+
+    <div id="usageInstructions" class="offcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">使用说明</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" id="usageInstructionsContent">
+            <p>这里是使用说明的内容。</p>
+        </div>
+    </div>
+
+    <div id="versionIntroduction" class="offcanvas">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">版本介绍</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" id="versionIntroductionContent">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- 引入COS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
+    <script src="/core.js"></script>
+    
+</body>
+</html>

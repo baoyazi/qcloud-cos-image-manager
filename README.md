@@ -47,12 +47,9 @@ COS 具有高扩展性、低成本、可靠安全等优点，适合存储各种�
 | 自定义修改   | ✗        | ✓  |
 
 ### 联系方式
-微信：dengzilou 或者 nbagigi
-
-地址：广东省中山市古镇西周围大街
 
 官网：www.dengzilou.com/tools/qcloud-cos-image-manager
 
-邮箱📫：dengzilou@dengzilou.com 或者 1262124788@qq.com
+邮箱📫：dengzilou@dengzilou.com 
 
 
