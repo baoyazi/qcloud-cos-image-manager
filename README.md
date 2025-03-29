@@ -82,8 +82,7 @@ pyinstaller --onefile --windowed --icon=qcloud-cos-image-manager.ico  --name "qc
 ------
 实在麻烦，买我的9.9元激活码，用我的打包版本，支持一下。
 
-官网：www.dengzilou.com/tools/qcloud-cos-image-manager
-
+官网：https://www.dengzilou.com/tool/qcloud-cos-image-manager
 邮箱📫：dengzilou@dengzilou.com 
 
 ##### 版本对比
